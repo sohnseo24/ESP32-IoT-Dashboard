@@ -58,10 +58,22 @@ ESP32-C6 보드의 개발 환경(ESP-IDF) 구조를 이해하고, KY-018 CdS 조
 
 ---
 
-## main.c 코드 로직 분석
+## 4. main.c 코드 로직 분석
 프로그램은 초기화 단계 -> 무한 루프(while(1)) -> ADC 읽기-> 밝기 단계 판별 및 RGB 색상 적용 ->FreeRTOS 대기 순서로 동작
 * 1. RGB LED 초기화 (configure_led)
 * 2. ADC Oneshot 모드 설정 (app_main)
 * 3. 센서 수집 및 제어 조건문 (while(1))
 
+---
 
+## 5. 트러블슈팅 및 배운점 
+* Issue 1: while(1) 무한 루프 내에서 대기 시간 없이 읽기를 수행할 경우 시스템이 재부팅(Watchdog Reset)될 수도 있다는 점을 알게됨
+
+원인 분석: FreeRTOS는 선점형 RTOS이므로, 하나의 Task가 CPU 자원을 100% 독점하면 시스템 감시 타이머가 이를 이상 동작으로 판단하여 보드를 리셋할 수 있다.
+
+해결 방법: while(1) 루프 하단에 vTaskDelay(pdMS_TO_TICKS(500))를 써서 0.5초 동안 task를 대기상태로 만들면 다른 백그라운드 Task 및 Watchdog에 CPU 자원을 안전하게 양보하게 할 수 있다.
+
+* Issue 2: FreeRTOS Tick 단위와 MS 변환
+배운 점: vTaskDelay()의 인자는 단순 밀리초(ms)가 아닌 FreeRTOS의 OS Tick 수이다. 
+
+개선: 보드 및 OS 설정 주기에 종속되지 않고 항상 같은 시간의 대기시간을 보장하려면 pdMS_TO_TICKS(500) 매크로 함수를 사용하는 것이 표준이다. 
