@@ -1,0 +1,3 @@
+idf_component_register(SRCS "main.c"
+                    INCLUDE_DIRS "."
+                    REQUIRES esp32-dht11 esp_adc driver led_strip)
